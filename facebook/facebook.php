@@ -4,7 +4,7 @@
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 	<head>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
         <meta charset="utf-8">
@@ -210,31 +210,44 @@
 			  </div>
 			  <div class="modal-footer">
 				  <div>
-				  <button onclick="fileValidation()">Post</button>
-					<input type="file" name="fileUp"  id="file" value="File" m accept="image/*" multiple> 
+					<?php
+ 						  if (isset($_POST['submit'])) {
+ 						    $image = $_FILES['image'];
+ 						    $image_name = $image['name'];
+ 						    $image_tmp_name = $image['tmp_name'];
+ 						    $image_size = $image['size'];
+ 						    $image_error = $image['error'];
+ 						    $image_type = $image['type'];
 
-							<script>
-							
-							function fileValidation() {
-            					var fileInput = document.getElementById('file');
-            					var filePath = fileInput.value;
+ 						    $image_ext = strtolower(end(explode('.', $image_name)));
+ 						    $allowed_ext = array('jpg', 'jpeg', 'png', 'gif');
 
-            					// Allowing file type
-            					var allowedExtensions =
-            					        /(\.jpg|\.jpeg|\.png|\.gif)$/i;
-
-            					if (!allowedExtensions.exec(filePath)) {
-            					    alert('Type de fichier invalide');
-            					    return false;
-            					}
-            					else
-            					{
-							    	alert('Type de fichier valide');
-            					    return true;
-               					    };
-								}
-							</script>
-							
+ 						    if ($image_error === 0) {
+ 						      if (in_array($image_ext, $allowed_ext)) {
+ 						        if ($image_size > 3 * 1024 * 1024 && $image_size < 70 * 1024 * 1024) {
+ 						          $new_image_name = uniqid('', true) . "." . $image_ext;
+ 						          $destination = 'images/' . $new_image_name;
+								   console.log(image_size)
+ 						          if (move_uploaded_file($image_tmp_name, $destination)) {
+ 						            echo "L'image a été envoyée avec succès";
+ 						          } else {
+ 						            echo "Il y a eu une erreur lors de l'envoi de l'image";
+ 						          }
+ 						        } else {
+ 						          echo "La taille de l'image doit être comprise entre 3 Mo et 70 Mo";
+ 						        }
+ 						      } else {
+ 						        echo "Le type de fichier n'est pas autorisé";
+ 						      }
+ 						    } else {
+ 						      echo "Il y a eu une erreur lors de l'envoi de l'image";
+ 						    }
+ 						  }
+ 						?>
+ 						<form action="" method="post" enctype="multipart/form-data">
+ 						  <input type="file" name="image"  >
+ 						  <input type="submit" name="submit" value="Envoyer">
+ 						</form>
 				</form>
 							 
 				</div>	
