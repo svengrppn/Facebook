@@ -1,22 +1,14 @@
-<?php
-
-
-
-?>
 <!DOCTYPE html>
 <html lang="fr">
-	<head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <title>Facebook Theme Demo</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-        <link href="assets/css/bootstrap.css" rel="stylesheet">
+  <head>
+    <meta charset=UTF-8>
+    <title>Bonjour tout le monde !</title>
+	<link href="assets/css/bootstrap.css" rel="stylesheet">
         <!--[if lt IE 9]>
           <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
         <![endif]-->
         <link href="assets/css/facebook.css" rel="stylesheet">
-    </head>
-    
+  </head>
     <body>
         
         <div class="wrapper">
@@ -142,6 +134,8 @@
 											 <div class="form-group" style="padding:14px;">
 											  <textarea class="form-control" placeholder="Update your status"></textarea>
 											</div>
+											
+												
 											<button class="btn btn-primary pull-right" type="button">Post</button><ul class="list-inline"><li><a href=""><i class="glyphicon glyphicon-upload"></i></a></li><li><a href=""><i class="glyphicon glyphicon-camera"></i></a></li><li><a href=""><i class="glyphicon glyphicon-map-marker"></i></a></li></ul>
 										  </form>
 									  </div>
@@ -168,7 +162,7 @@
 								  </div>
 								  <div class="col-sm-6">
 									<p>
-									<a href="#" class="pull-right">�Copyright 2013</a>
+									
 									</p>
 								  </div>
 								</div>
@@ -183,6 +177,7 @@
 								
 							  
 							</div><!-- /col-9 -->
+		
 						</div><!-- /padding -->
 					</div>
 					<!-- /main -->
@@ -210,50 +205,26 @@
 			  </div>
 			  <div class="modal-footer">
 				  <div>
-					<?php
- 						  if (isset($_POST['submit'])) {
- 						    $image = $_FILES['image'];
- 						    $image_name = $image['name'];
- 						    $image_tmp_name = $image['tmp_name'];
- 						    $image_size = $image['size'];
- 						    $image_error = $image['error'];
- 						    $image_type = $image['type'];
+				  <form action="" method="post" >
+  					  <input type="file" name="image" multiple>
+  					  <input type="submit" name="submit" value="Envoyer">
+  					</form>
+					 <?php
 
- 						    $image_ext = strtolower(end(explode('.', $image_name)));
- 						    $allowed_ext = array('jpg', 'jpeg', 'png', 'gif');
+					 $file = $_POST['image'];
+					 $file = $_SESSION['img'];
+					 console.log( $_SESSION['img'];);
+					 
+					 ?>
 
- 						    if ($image_error === 0) {
- 						      if (in_array($image_ext, $allowed_ext)) {
- 						        if ($image_size > 3 * 1024 * 1024 && $image_size < 70 * 1024 * 1024) {
- 						          $new_image_name = uniqid('', true) . "." . $image_ext;
- 						          $destination = 'images/' . $new_image_name;
-								   console.log(image_size)
- 						          if (move_uploaded_file($image_tmp_name, $destination)) {
- 						            echo "L'image a été envoyée avec succès";
- 						          } else {
- 						            echo "Il y a eu une erreur lors de l'envoi de l'image";
- 						          }
- 						        } else {
- 						          echo "La taille de l'image doit être comprise entre 3 Mo et 70 Mo";
- 						        }
- 						      } else {
- 						        echo "Le type de fichier n'est pas autorisé";
- 						      }
- 						    } else {
- 						      echo "Il y a eu une erreur lors de l'envoi de l'image";
- 						    }
- 						  }
- 						?>
- 						<form action="" method="post" enctype="multipart/form-data">
- 						  <input type="file" name="image"  >
- 						  <input type="submit" name="submit" value="Envoyer">
- 						</form>
-				</form>
-							 
+					
+					
+												 
 				</div>	
 			  </div>
 		  </div>
 		  </div>
+		  <div> salut</div>
 		</div>
         
         <script type="text/javascript" src="assets/js/jquery.js"></script>
