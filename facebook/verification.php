@@ -9,53 +9,65 @@
 <body>
 </body>
 </html>
-      <?php
-      $errors = array();
-      $maxFileSize = 3 * 1024 * 1024; // 3 Méga-octets
-      $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
-      $images = $_FILES['images'];
-      if (isset($images)) {
-        $totalSize = 0;
-               
-        for ($i = 0; $i < count($images['name']); $i++) {
-          // Vérification de l'extension
-          $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
-          if ($extension != "jpg" && $extension != "jpeg" && $extension != "png" && $extension != "gif") {
-            array_push($errors, "L'extension du fichier " . $images['name'][$i] . " n'est pas valide");
-            continue;
-          }
-          // Vérification de la taille
-          if ($images['size'][$i] > $maxFileSize) {
-            array_push($errors, "La taille du fichier " . $images['name'][$i] . " dépasse la limite de 3 Méga-octets");
-            continue;
-          }
-          // Calcul de la taille totale des fichiers
-          $totalSize += $images['size'][$i];
-        }
-        
-        // Vérification de la taille totale
-        if ($totalSize > $maxTotalSize) {
-          array_push($errors, "La somme des tailles de tous les fichiers dépasse la limite de 70 Méga-octets");
-        }
+<?php
+// Connexion à la base de données
+try {
+  $pdo = new PDO('mysql:host=localhost;dbname=facebook', 'root', 'Super');
+} catch (PDOException $e) {
+  echo 'Connexion échouée : ' . $e->getMessage();
+  exit();
+}
 
-        if (count($errors) > 0) {
-          echo "<b>Erreurs :</b>";
-          echo "<ul>";
-          foreach ($errors as $error) {
-            echo "<li>" . $error . "</li>";
-          }
-          echo "</ul>";
-        } 
-        else {
-          for($i = 0; $i < count($images['name']); $i++){
-            if(!move_uploaded_file($images['tmp_name'][$i],"img_uploads/".$images['name'][$i])){
-              echo "failed";
-            }else{
-              header("Location: index.php");
-            }
-          }
-          
-        }
-      }  
+$errors = array();
+$maxFileSize = 3 * 1024 * 1024; // 3 Méga-octets
+$maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
+$images = $_FILES['images'];
+
+if (isset($images)) {
+  $totalSize = 0;
+  $validImages = array();
+  for ($i = 0; $i < count($images['name']); $i++) {
+    // Vérification de l'extension
+    $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
+    if ($extension != "jpg" && $extension != "jpeg" && $extension != "png" && $extension != "gif") {
+      array_push($errors, "L'extension du fichier " . $images['name'][$i] . " n'est pas valide");
+      continue;
+    }
+    // Vérification de la taille
+    if ($images['size'][$i] > $maxFileSize) {
+      array_push($errors, "La taille du fichier " . $images['name'][$i] . " dépasse la limite de 3 Méga-octets");
+      continue;
+    }
+    // Calcul de la taille totale des fichiers
+    $totalSize += $images['size'][$i];
+    array_push($validImages, $images['name'][$i]);
+  }
+  
+  // Vérification de la taille totale
+  if ($totalSize > $maxTotalSize) {
+    array_push($errors, "La somme des tailles de tous les fichiers dépasse la limite de 70 Méga-octets");
+  }
+
+  if (count($errors) > 0) {
+    echo "<b>Erreurs :</b>";
+    echo "<ul>";
+    foreach ($errors as $error) {
+      echo "<li>" . $error . "</li>";
+    }
+    echo "</ul>";
+  } else {
+    // Ajouter les images valides à la base de données
+    foreach ($validImages as $imageName) {
+        $imageData = file_get_contents($_FILES['images']['tmp_name'][array_search($imageName, $images['name'])]);
+        $stmt = $pdo->prepare('INSERT INTO images (nom, data) VALUES (:nom, :data)');
+        $stmt->bindParam(':nom', $imageName);
+        $stmt->bindParam(':data', $imageData,PDO::PARAM_LOB);
+        $stmt->execute();
+    }
+       
+    header("Location: index.php");
+    }
+  }
 ?>
+
     
