@@ -1,3 +1,6 @@
+<?php 
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -205,19 +208,10 @@
 			  </div>
 			  <div class="modal-footer">
 				  <div>
-				  <form action="" method="post" >
-  					  <input type="file" name="image" multiple>
-  					  <input type="submit" name="submit" value="Envoyer">
-  					</form>
-					 <?php
-
-					 $file = $_POST['image'];
-					 $file = $_SESSION['img'];
-					 console.log( $_SESSION['img'];);
-					 
-					 ?>
-
-					
+				  <form action="verification.php" method="post" enctype="multipart/form-data">
+    				  <input type="file" name="images[]" multiple>
+    				  <input type="submit" value="Envoyer">
+    				</form>
 					
 												 
 				</div>	
