@@ -199,16 +199,15 @@ session_start();
 
 					Update Status
 			  </div>
+			  <form action="verification.php" method="post" enctype="multipart/form-data">
 			  <div class="modal-body">
-				  <form class="form center-block">
 					<div class="form-group">
-					  <textarea class="form-control input-lg" autofocus="" placeholder="What do you want to share?"></textarea>
+					  <textarea class="form-control input-lg" name="text" autofocus="" placeholder="What do you want to share?"></textarea>
 					</div>
-				  </form>
 			  </div>
 			  <div class="modal-footer">
 				  <div>
-				  <form action="verification.php" method="post" enctype="multipart/form-data">
+				 
     				  <input type="file" name="images[]" multiple>
     				  <input type="submit" value="Envoyer">
     				</form>
