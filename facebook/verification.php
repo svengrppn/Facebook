@@ -19,11 +19,11 @@ try {
 }
 
 $errors = array();
-
 $maxFileSize = 3 * 1024 * 1024; // 3 Méga-octets
 $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
 $images = $_FILES['images'];
 $directory = "img_uploads/";
+$text = $_POST['text'];
 if(!is_dir($directory)){
   mkdir($directory);
 }
@@ -70,12 +70,34 @@ if (isset($images)) {
     for($i = 0; $i < count($validImages); $i++) {
         $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
         $date = date('Y-m-d H:i:s');
+        $dateModif = date('Y-m-d H:i:s');
         move_uploaded_file($images['tmp_name'][$i], $directory . $validImages[$i]);
         $stmt = $pdo->prepare('INSERT INTO media (nomFichierMedia,typeMedia,dateDeCreation) VALUES (:nom,:type,:date)');
         $stmt->bindParam(':nom', $validImages[$i]);
         $stmt->bindParam(':type', $extension);
         $stmt->bindParam(':date', $date);
+        
         $stmt->execute();
+        $idPost = $pdo->lastInsertId();
+        //deuxième requète 
+        $stmt = $pdo->prepare('INSERT INTO post (idPost,commentaire,dateDeCreation,dateDeModification) VALUES (:idPost,:commentaire,:dateModif,:date)');
+        $stmt->bindParam(':idPost', $idPost);
+        $stmt->bindParam(':commentaire', $text);
+        $stmt->bindParam(':dateModif', $dateModif );
+        $stmt->bindParam(':date', $date);
+        $stmt->execute();
+
+        $stmt2 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media INNER JOIN post USING media.idMedia = post.idPost');
+        $stmt2->execute();
+        $results = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        // Affichage des images avec leurs descriptions
+        foreach ($results as $row) {
+          echo '<div>';
+          echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image">';
+          echo '<p>' . $row['commentaire'] . '</p>';
+          echo '</div>';
+        }
     }
        
     header("Location: index.php");
