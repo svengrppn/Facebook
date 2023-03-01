@@ -10,6 +10,7 @@
 </body>
 </html>
 <?php
+session_start();
 // Connexion à la base de données
 try {
   $pdo = new PDO('mysql:host=localhost;dbname=facebook', 'root', 'Super');
@@ -78,26 +79,25 @@ if (isset($images)) {
         $stmt->bindParam(':date', $date);
         
         $stmt->execute();
-        $idPost = $pdo->lastInsertId();
+        $idMedia= $pdo->lastInsertId();
         //deuxième requète 
-        $stmt = $pdo->prepare('INSERT INTO post (idPost,commentaire,dateDeCreation,dateDeModification) VALUES (:idPost,:commentaire,:dateModif,:date)');
-        $stmt->bindParam(':idPost', $idPost);
+        $stmt = $pdo->prepare('INSERT INTO post (idMedia,commentaire,dateDeCreation,dateDeModification) VALUES (:idMedia,:commentaire,:dateModif,:date)');
+        $stmt->bindParam(':idMedia', $idMedia);
         $stmt->bindParam(':commentaire', $text);
         $stmt->bindParam(':dateModif', $dateModif );
         $stmt->bindParam(':date', $date);
         $stmt->execute();
 
-        $stmt2 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media INNER JOIN post USING media.idMedia = post.idPost');
+        // Affichage des images avec leurs descriptions
+        
+        $stmt2 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media JOIN post ON media.idMedia = post.idPost');
         $stmt2->execute();
         $results = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
-        // Affichage des images avec leurs descriptions
-        foreach ($results as $row) {
-          echo '<div>';
-          echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image">';
-          echo '<p>' . $row['commentaire'] . '</p>';
-          echo '</div>';
-        }
+          foreach ($results as $row) {
+            echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image">';
+            echo '<p>' . $row['commentaire'] . '</p>'
+         }
     }
        
     header("Location: index.php");

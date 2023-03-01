@@ -100,7 +100,10 @@ session_start();
 					  
 						<div class="padding">
 							<div class="full col-sm-9">
-							  
+							<?php 
+									
+								
+									?>
 								<!-- content -->                      
 								<div class="row">
 								  
@@ -208,7 +211,7 @@ session_start();
 			  <div class="modal-footer">
 				  <div>
 				 
-    				  <input type="file" name="images[]" multiple>
+    				  <input type="file" name="images[]" accept="image/*" multiple>
     				  <input type="submit" value="Envoyer">
     				</form>
 					
