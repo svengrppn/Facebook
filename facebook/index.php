@@ -1,5 +1,8 @@
 <?php 	
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 session_start();
+require_once 'verification.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -15,6 +18,7 @@ session_start();
     <body>
         
         <div class="wrapper">
+	
 			<div class="box">
 				<div class="row row-offcanvas row-offcanvas-left">
 					
@@ -100,10 +104,9 @@ session_start();
 					  
 						<div class="padding">
 							<div class="full col-sm-9">
-							<?php 
+							  	<div> 
 									
-								
-									?>
+								</div>
 								<!-- content -->                      
 								<div class="row">
 								  
@@ -113,7 +116,9 @@ session_start();
 									  <div class="panel panel-default">
 										<div class="panel-thumbnail"><img src="assets/img/bg_5.jpg" id="image_post" class="img-responsive"></div>
 										<div class="panel-body">
+											  
 										  <p class="lead">Urbanization</p>
+										
 										  <p>45 Followers, 13 Posts</p>
 										  
 										  <p>
@@ -148,7 +153,6 @@ session_start();
 								   
 									
 								  
-
 										
 								   
 								  </div>
@@ -159,6 +163,10 @@ session_start();
 								<div class="row">
 								  <div class="col-sm-6">
 									<a href="#">Twitter</a> <small class="text-muted">|</small> <a href="#">Facebook</a> <small class="text-muted">|</small> <a href="#">Google+</a>
+									<?php 
+									afficher_image($pdo);
+									
+									?>
 								  </div>
 								</div>
 							  
@@ -218,11 +226,13 @@ session_start();
 												 
 				</div>	
 			  </div>
+			
 		  </div>
 		  </div>
 		  <div> salut</div>
+		  
 		</div>
-        
+       
         <script type="text/javascript" src="assets/js/jquery.js"></script>
         <script type="text/javascript" src="assets/js/bootstrap.js"></script>
         <script type="text/javascript">
@@ -237,4 +247,5 @@ session_start();
 			});
         });
         </script>
+		
 </body></html>

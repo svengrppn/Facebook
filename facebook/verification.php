@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-</body>
-</html>
+
 <?php
 session_start();
 // Connexion à la base de données
@@ -73,6 +63,7 @@ if (isset($images)) {
         $date = date('Y-m-d H:i:s');
         $dateModif = date('Y-m-d H:i:s');
         move_uploaded_file($images['tmp_name'][$i], $directory . $validImages[$i]);
+        
         $stmt = $pdo->prepare('INSERT INTO media (nomFichierMedia,typeMedia,dateDeCreation) VALUES (:nom,:type,:date)');
         $stmt->bindParam(':nom', $validImages[$i]);
         $stmt->bindParam(':type', $extension);
@@ -88,23 +79,30 @@ if (isset($images)) {
         $stmt->bindParam(':date', $date);
         $stmt->execute();
 
-        // Affichage des images avec leurs descriptions
         
-        $stmt2 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media JOIN post ON media.idMedia = post.idPost');
-        $stmt2->execute();
-        $results = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-
-          foreach ($results as $row) {
-            echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image">';
-            echo '<p>' . $row['commentaire'] . '</p>'
-         }
     }
        
-    header("Location: index.php");
     }
+
+  
+    
+    header("Location: index.php");
+    exit;
+    
   }
   
-
+       // Affichage des images avec leurs descriptions
+      function afficher_image($pdo) {
+       $stmt2 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media INNER JOIN post ON media.idMedia = post.idMedia');
+       $stmt2->execute();
+       $results = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+       foreach ($results as $row) {
+        echo '<div style="width : 300px; border-style: solid; margin : 5; padding : 5;background-color : white;">';
+           echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image" class="img-responsive">';
+           echo '<span style="margin : 2; font-size : 20px; font-weight : bold; ">' . $row['commentaire'] . '</span>';
+        echo '</div>';
+       }
+      }
   
   
 ?>
