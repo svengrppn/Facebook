@@ -57,45 +57,53 @@ if (isset($images)) {
     }
     echo "</ul>";
   } else {
-    // Ajouter les images valides à la base de données
-    for($i = 0; $i < count($validImages); $i++) {
-        $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
-        $date = date('Y-m-d H:i:s');
-        $dateModif = date('Y-m-d H:i:s');
-        move_uploaded_file($images['tmp_name'][$i], $directory . $validImages[$i]);
-        
-        $stmt = $pdo->prepare('INSERT INTO media (nomFichierMedia,typeMedia,dateDeCreation) VALUES (:nom,:type,:date)');
-        $stmt->bindParam(':nom', $validImages[$i]);
-        $stmt->bindParam(':type', $extension);
-        $stmt->bindParam(':date', $date);
-        
-        $stmt->execute();
-        $idMedia= $pdo->lastInsertId();
-        //deuxième requète 
-        $stmt = $pdo->prepare('INSERT INTO post (idMedia,commentaire,dateDeCreation,dateDeModification) VALUES (:idMedia,:commentaire,:dateModif,:date)');
-        $stmt->bindParam(':idMedia', $idMedia);
-        $stmt->bindParam(':commentaire', $text);
-        $stmt->bindParam(':dateModif', $dateModif );
-        $stmt->bindParam(':date', $date);
-        $stmt->execute();
-
-        
-    }
-       
-    }
-
+    $date = date('Y-m-d H:i:s');
+    $dateModif = date('Y-m-d H:i:s');
+    try {
+      // Début de la transaction
+      $pdo->beginTransaction();
   
-    
-    header("Location: index.php");
-    exit;
-    
+      $stmt = $pdo->prepare('INSERT INTO post (commentaire, dateDeCreation, dateDeModification) VALUES (:commentaire, :dateModif, :date)');
+      $stmt->bindParam(':commentaire', $text);
+      $stmt->bindParam(':dateModif', $dateModif);
+      $stmt->bindParam(':date', $date);
+      $stmt->execute();
+      $idPost = $pdo->lastInsertId();
+  
+      for ($i = 0; $i < count($validImages); $i++) {
+          $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
+          $stmt2 = $pdo->prepare('INSERT INTO media (idPost, nomFichierMedia, typeMedia, dateDeCreation) VALUES (:idPost, :nom, :type, :date)');
+          $stmt2->bindParam(':idPost', $idPost);
+          $stmt2->bindParam(':nom', $validImages[$i]);
+          $stmt2->bindParam(':type', $extension);
+          $stmt2->bindParam(':date', $date);
+          $stmt2->execute();
+          move_uploaded_file($images['tmp_name'][$i], $directory . $validImages[$i]);
+      }
+      // Si tout est OK, on valide la transaction
+      $pdo->commit();
+      $_SESSION['valid'] = true;
+      header("Location: index.php");
+      exit;
+  } catch (PDOException $e) {
+      // En cas d'erreur, on annule la transaction
+      $pdo->rollBack();
+      $_SESSION['valid'] = false;
+      echo 'Connexion échouée : ' . $e->getMessage();
+      exit();
+  }
+  
+  if ($_SESSION['valid'] == false) {
+      echo 'l\'insertion n\'a pas marché';
+  }
+  }
   }
   
        // Affichage des images avec leurs descriptions
       function afficher_image($pdo) {
-       $stmt2 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media INNER JOIN post ON media.idMedia = post.idMedia');
-       $stmt2->execute();
-       $results = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+       $stmt3 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media INNER JOIN post ON media.idPost = post.idPost');
+       $stmt3->execute();
+       $results = $stmt3->fetchAll(PDO::FETCH_ASSOC);
        foreach ($results as $row) {
         echo '<div style="width : 300px; border-style: solid; margin : 5; padding : 5;background-color : white;">';
            echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image" class="img-responsive">';

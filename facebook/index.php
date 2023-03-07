@@ -16,7 +16,6 @@ require_once 'verification.php';
         <link href="assets/css/facebook.css" rel="stylesheet">
   </head>
     <body>
-        
         <div class="wrapper">
 	
 			<div class="box">
@@ -247,5 +246,9 @@ require_once 'verification.php';
 			});
         });
         </script>
-		
+		<?php if(isset($_SESSION['valid']) && $_SESSION['valid'] === true): ?>
+<script>
+    alert("L'insertion a été effectuée avec succès !");
+</script>
+<?php endif; ?>
 </body></html>
