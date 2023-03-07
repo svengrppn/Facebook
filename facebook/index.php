@@ -14,6 +14,7 @@ require_once 'verification.php';
           <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
         <![endif]-->
         <link href="assets/css/facebook.css" rel="stylesheet">
+		
   </head>
     <body>
         <div class="wrapper">
@@ -218,7 +219,7 @@ require_once 'verification.php';
 			  <div class="modal-footer">
 				  <div>
 				 
-    				  <input type="file" name="images[]" accept="image/*" multiple>
+    				  <input type="file" name="media[]" accept="image/*,video/*" multiple>
     				  <input type="submit" value="Envoyer">
     				</form>
 					
@@ -246,9 +247,13 @@ require_once 'verification.php';
 			});
         });
         </script>
-		<?php if(isset($_SESSION['valid']) && $_SESSION['valid'] === true): ?>
-<script>
-    alert("L'insertion a été effectuée avec succès !");
-</script>
-<?php endif; ?>
+		<?php
+		if (isset($_SESSION['valid']) && $_SESSION['valid'] === true) {
+            // L'insertion a été effectuée avec succès !
+            echo '<script>alert("L\'insertion a été effectuée avec succès !");</script>';
+        } else {
+            // L'insertion a échoué.
+            echo '<script>alert("L\'insertion a échoué.");</script>';
+        }
+		?>
 </body></html>

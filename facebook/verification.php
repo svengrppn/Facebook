@@ -10,46 +10,55 @@ try {
 }
 
 $errors = array();
-$maxFileSize = 3 * 1024 * 1024; // 3 Méga-octets
+$maxFileSize = 10 * 1024 * 1024; // 3 Méga-octets
 $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
-$images = $_FILES['images'];
+$media = $_FILES['media'];
 $directory = "img_uploads/";
 $text = $_POST['text'];
 if(!is_dir($directory)){
   mkdir($directory);
 }
-if (isset($images)) {
+if (isset($media)) {
   $totalSize = 0;
-  $validImages = array();
-  for ($i = 0; $i < count($images['name']); $i++) {
-    
-    $imageInfo = getimagesize($images['tmp_name'][$i]);
+  $validMedia = array();
+  for ($i = 0; $i < count($media['name']); $i++) {
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mediaInfo = $finfo->file($media['tmp_name'][$i]);
     // Vérification de l'extension
-    $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
-    $allowed_file_types = ['image/png', 'image/jpeg', 'image/jpg'];
-      // Vérification de l'extension
-      if ($extension != "jpg" && $extension != "jpeg" && $extension != "png") {
-        array_push($errors, "L'extension du fichier " . $images['name'][$i] . " n'est pas valide");
+    $extension = strtolower(pathinfo($media['name'][$i], PATHINFO_EXTENSION));
+    $allowed_file_types = ['image/png', 'image/jpeg', 'image/jpg', 'video/mp4', 'video/mpeg', 'video/quicktime'];
+    if (!in_array($mediaInfo, $allowed_file_types)) {
+        array_push($errors, "Le fichier " . $media['name'][$i] . " n'est pas une image ou une vidéo");
         continue;
-      }
-      if (!in_array($imageInfo['mime'], $allowed_file_types)) {
-        array_push($errors, "L'image " . $images['name'][$i] . " n'est pas une vrai image");
-        continue;
-      }
+    } elseif (in_array($mediaInfo, ['video/mp4', 'video/mpeg', 'video/quicktime'])) {
+        // Vérification de l'extension de la vidéo
+        if ($extension != "mp4" && $extension != "mpeg" && $extension != "mov") {
+            array_push($errors, "L'extension de la vidéo " . $media['name'][$i] . " n'est pas valide");
+            continue;
+        }
+    } else {
+        // Vérification de l'extension de l'image
+        if ($extension != "jpg" && $extension != "jpeg" && $extension != "png") {
+            array_push($errors, "L'extension du fichier " . $media['name'][$i] . " n'est pas valide");
+            continue;
+        }
+    }
       
-    $totalSize += $images['size'][$i];
-    array_push($validImages, $images['name'][$i]);
+    $totalSize += $media['size'][$i];
+    array_push($validMedia, $media['name'][$i]);
     // Vérification de la taille
-    if ($images['size'][$i] > $maxFileSize) {
-      array_push($errors, "La taille du fichier " . $images['name'][$i] . " dépasse la limite de 3 Méga-octets");
+    if ($media['size'][$i] > $maxFileSize) {
+      array_push($errors, "La taille du fichier " . $media['name'][$i] . " dépasse la limite de 3 Méga-octets");
     }
-    }
+  }
 
   // Vérification de la taille totale
   if ($totalSize > $maxTotalSize) {
     array_push($errors, "La somme des tailles de tous les fichiers dépasse la limite de 70 Méga-octets");
   }
-  if (count($errors) > 0) {
+  
+  if (count($errors) > 0) {   
+    $_SESSION['valid'] = false;
     echo "<b>Erreurs :</b>";
     echo "<ul>";
     foreach ($errors as $error) {
@@ -69,49 +78,80 @@ if (isset($images)) {
       $stmt->bindParam(':date', $date);
       $stmt->execute();
       $idPost = $pdo->lastInsertId();
-  
-      for ($i = 0; $i < count($validImages); $i++) {
-          $extension = strtolower(pathinfo($images['name'][$i], PATHINFO_EXTENSION));
+      $uploadSuccessful = true;
+      for ($i = 0; $i < count($validMedia); $i++) {
+          $extension = strtolower(pathinfo($media['name'][$i], PATHINFO_EXTENSION));
           $stmt2 = $pdo->prepare('INSERT INTO media (idPost, nomFichierMedia, typeMedia, dateDeCreation) VALUES (:idPost, :nom, :type, :date)');
           $stmt2->bindParam(':idPost', $idPost);
-          $stmt2->bindParam(':nom', $validImages[$i]);
+          $stmt2->bindParam(':nom', $validMedia[$i]);
           $stmt2->bindParam(':type', $extension);
           $stmt2->bindParam(':date', $date);
-          $stmt2->execute();
-          move_uploaded_file($images['tmp_name'][$i], $directory . $validImages[$i]);
-      }
-      // Si tout est OK, on valide la transaction
-      $pdo->commit();
-      $_SESSION['valid'] = true;
-      header("Location: index.php");
-      exit;
+          
+          if (!move_uploaded_file($media['tmp_name'][$i], $directory . $validMedia[$i])) {
+            $uploadSuccessful = false;
+            break;
+        }
+      
+          $stmt2->execute(); 
+    }
+      if ($uploadSuccessful) {
+        // Si tout est OK, on valide la transaction
+        $pdo->commit();
+        $_SESSION['valid'] = true;
+        header("Location: index.php");
+        
+
+        exit;
+    } else {
+        // Si l'upload a échoué, on annule la transaction
+        $pdo->rollBack();
+        $_SESSION['valid'] = false;
+        exit();
+    }
   } catch (PDOException $e) {
-      // En cas d'erreur, on annule la transaction
-      $pdo->rollBack();
-      $_SESSION['valid'] = false;
-      echo 'Connexion échouée : ' . $e->getMessage();
-      exit();
-  }
+    // En cas d'erreur, on annule la transaction
+    $pdo->rollBack();
+    $_SESSION['valid'] = false;
+    echo 'Connexion échouée : ' . $e->getMessage();
+    exit();
+}
+      // Si tout est OK, on valide la transaction
   
-  if ($_SESSION['valid'] == false) {
-      echo 'l\'insertion n\'a pas marché';
+    
+    }
   }
-  }
-  }
-  
        // Affichage des images avec leurs descriptions
-      function afficher_image($pdo) {
-       $stmt3 = $pdo->prepare('SELECT media.nomFichierMedia, post.commentaire FROM media INNER JOIN post ON media.idPost = post.idPost');
-       $stmt3->execute();
-       $results = $stmt3->fetchAll(PDO::FETCH_ASSOC);
-       foreach ($results as $row) {
-        echo '<div style="width : 300px; border-style: solid; margin : 5; padding : 5;background-color : white;">';
-           echo '<img src="img_uploads/' . $row['nomFichierMedia'] . '" alt="image" class="img-responsive">';
-           echo '<span style="margin : 2; font-size : 20px; font-weight : bold; ">' . $row['commentaire'] . '</span>';
-        echo '</div>';
-       }
+       function afficher_image($pdo) {
+        $stmt3 = $pdo->prepare('SELECT post.idPost, media.nomFichierMedia, post.commentaire FROM media INNER JOIN post ON media.idPost = post.idPost');
+        $stmt3->execute();
+        $results = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($results as $row) {
+          echo '<div style="display: flex; flex-direction: column; justify-content: space-between; width: 300px; border-style: solid; margin: 5px; padding: 5px; background-color: white;">';
+          echo "<div style='display: flex; justify-content: center;'>";
+          $extension = strtolower(pathinfo($row['nomFichierMedia'], PATHINFO_EXTENSION));
+          if ($extension == 'mp4' || $extension == 'mpeg' || $extension == 'mov') {
+            echo "<video src='img_uploads/".$row['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
+          } else {
+            echo "<img src='img_uploads/".$row['nomFichierMedia']."' width='150' height='120'>";
+          }
+          echo "</div>";
+          echo "<div style='display: flex; flex-direction: column;'>";
+          echo "<span>".$row['commentaire']."</span>";
+          echo "<div style='display: flex; justify-content: space-between; align-items: flex-end;'>";
+          echo "<form action='modifier_image.php' method='POST'>";
+          echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
+          echo "<input type='submit' name='modifier' value='Modifier'>";
+          echo "</form>";
+          echo "<form action='supprimer_image.php' method='POST'>";
+          echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
+          echo "<input type='submit' name='supprimer' value='Supprimer'>";
+          echo "</form>";
+          echo "</div>";
+          echo "</div>";
+          echo "</div><br><br>";
+        }
       }
-  
+      
   
 ?>
 
