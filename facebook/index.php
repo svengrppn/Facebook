@@ -164,7 +164,7 @@ require_once 'verification.php';
 								  <div class="col-sm-6">
 									<a href="#">Twitter</a> <small class="text-muted">|</small> <a href="#">Facebook</a> <small class="text-muted">|</small> <a href="#">Google+</a>
 									<?php 
-									afficher_image($pdo);
+									afficher_medias_posts($pdo);
 									
 									?>
 								  </div>
@@ -219,7 +219,7 @@ require_once 'verification.php';
 			  <div class="modal-footer">
 				  <div>
 				 
-    				  <input type="file" name="media[]" accept="image/*,video/*" multiple>
+    				  <input type="file" name="media[]" accept="image/*,video/*,audio/*" multiple>
     				  <input type="submit" value="Envoyer">
     				</form>
 					

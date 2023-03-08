@@ -13,27 +13,32 @@ $errors = array();
 $maxFileSize = 10 * 1024 * 1024; // 3 Méga-octets
 $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
 $media = $_FILES['media'];
-$directory = "img_uploads/";
+$directory = "uploads/";
 $text = $_POST['text'];
 if(!is_dir($directory)){
   mkdir($directory);
 }
 if (isset($media)) {
   $totalSize = 0;
-  $validMedia = array();
-  for ($i = 0; $i < count($media['name']); $i++) {
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mediaInfo = $finfo->file($media['tmp_name'][$i]);
+$validMedia = array();
+for ($i = 0; $i < count($media['name']); $i++) {
+  $mediaInfo = mime_content_type($media['tmp_name'][$i]);
     // Vérification de l'extension
     $extension = strtolower(pathinfo($media['name'][$i], PATHINFO_EXTENSION));
-    $allowed_file_types = ['image/png', 'image/jpeg', 'image/jpg', 'video/mp4', 'video/mpeg', 'video/quicktime'];
+    $allowed_file_types = ['image/png', 'image/jpeg', 'image/jpg', 'video/mp4', 'video/mpeg', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/mp3'];
     if (!in_array($mediaInfo, $allowed_file_types)) {
-        array_push($errors, "Le fichier " . $media['name'][$i] . " n'est pas une image ou une vidéo");
+        array_push($errors, "Le fichier " . $media['name'][$i] . " n'est pas une image, une vidéo ou un fichier audio");
         continue;
     } elseif (in_array($mediaInfo, ['video/mp4', 'video/mpeg', 'video/quicktime'])) {
         // Vérification de l'extension de la vidéo
         if ($extension != "mp4" && $extension != "mpeg" && $extension != "mov") {
             array_push($errors, "L'extension de la vidéo " . $media['name'][$i] . " n'est pas valide");
+            continue;
+        }
+    } elseif (in_array($mediaInfo, ['audio/mpeg', 'audio/wav', 'audio/mp3'])) {
+        // Vérification de l'extension du fichier audio
+        if ($extension != "mp3" && $extension != "wav") {
+            array_push($errors, "L'extension du fichier audio " . $media['name'][$i] . " n'est pas valide");
             continue;
         }
     } else {
@@ -121,36 +126,44 @@ if (isset($media)) {
     }
   }
        // Affichage des images avec leurs descriptions
-       function afficher_image($pdo) {
-        $stmt3 = $pdo->prepare('SELECT post.idPost, media.nomFichierMedia, post.commentaire FROM media INNER JOIN post ON media.idPost = post.idPost');
-        $stmt3->execute();
-        $results = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+       function afficher_medias_posts($pdo) {
+        $stmt = $pdo->prepare('SELECT * FROM post ORDER BY idPost DESC');
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($results as $row) {
-          echo '<div style="display: flex; flex-direction: column; justify-content: space-between; width: 300px; border-style: solid; margin: 5px; padding: 5px; background-color: white;">';
-          echo "<div style='display: flex; justify-content: center;'>";
-          $extension = strtolower(pathinfo($row['nomFichierMedia'], PATHINFO_EXTENSION));
-          if ($extension == 'mp4' || $extension == 'mpeg' || $extension == 'mov') {
-            echo "<video src='img_uploads/".$row['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
-          } else {
-            echo "<img src='img_uploads/".$row['nomFichierMedia']."' width='150' height='120'>";
-          }
-          echo "</div>";
-          echo "<div style='display: flex; flex-direction: column;'>";
-          echo "<span>".$row['commentaire']."</span>";
-          echo "<div style='display: flex; justify-content: space-between; align-items: flex-end;'>";
-          echo "<form action='modifier_image.php' method='POST'>";
-          echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
-          echo "<input type='submit' name='modifier' value='Modifier'>";
-          echo "</form>";
-          echo "<form action='supprimer_image.php' method='POST'>";
-          echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
-          echo "<input type='submit' name='supprimer' value='Supprimer'>";
-          echo "</form>";
-          echo "</div>";
-          echo "</div>";
-          echo "</div><br><br>";
+            echo '<div style="display: flex; flex-direction: column; justify-content: space-between; width: 300px; border-style: solid; margin: 5px; padding: 5px; background-color: white;">';
+            $stmt2 = $pdo->prepare('SELECT nomFichierMedia FROM media WHERE idPost = :idPost');
+            $stmt2->bindParam(':idPost', $row['idPost'], PDO::PARAM_INT);
+            $stmt2->execute();
+            $medias = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($medias as $media) {
+                echo "<div style='display: flex; justify-content: center;'>";
+                $extension = strtolower(pathinfo($media['nomFichierMedia'], PATHINFO_EXTENSION));
+                if ($extension == 'mp4' || $extension == 'mpeg' || $extension == 'mov') {
+                    echo "<video src='uploads/".$media['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
+                } else if($extension != "mp3" && $extension != "wav")  {
+                    echo "<img src='uploads/".$media['nomFichierMedia']."' width='150' height='120' controls autoplay='false'>";
+                } else {
+                    echo "<img src='uploads/".$media['nomFichierMedia']."' width='150' height='120'>";
+                }
+                echo "</div>";
+            }
+            echo "<div style='display: flex; flex-direction: column;'>";
+            echo "<span>".$row['commentaire']."</span>";
+            echo "<div style='display: flex; justify-content: space-between; align-items: flex-end;'>";
+            echo "<form action='modifier_image.php' method='POST'>";
+            echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
+            echo "<input type='submit' name='modifier' value='Modifier'>";
+            echo "</form>";
+            echo "<form action='supprimer_image.php' method='POST'>";
+            echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
+            echo "<input type='submit' name='supprimer' value='Supprimer'>";
+            echo "</form>";
+            echo "</div>";
+            echo "</div>";
+            echo "</div><br><br>";
         }
-      }
+    }
       
   
 ?>
