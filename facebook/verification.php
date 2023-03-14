@@ -15,12 +15,14 @@ $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
 $media = $_FILES['media'];
 $directory = "uploads/";
 $text = $_POST['text'];
+$_SESSION['valid'] = false;
+$_SESSION['insertion_reussie'] = false;
 if(!is_dir($directory)){
   mkdir($directory);
 }
 if (isset($media)) {
   $totalSize = 0;
-$validMedia = array();
+  $validMedia = array();
 for ($i = 0; $i < count($media['name']); $i++) {
   $mediaInfo = mime_content_type($media['tmp_name'][$i]);
     // Vérification de l'extension
@@ -37,7 +39,7 @@ for ($i = 0; $i < count($media['name']); $i++) {
         }
     } elseif (in_array($mediaInfo, ['audio/mpeg', 'audio/wav', 'audio/mp3'])) {
         // Vérification de l'extension du fichier audio
-        if ($extension != "mp3" && $extension != "wav") {
+        if ($extension != "mp3" && $extension != "wav" && $extension != "mpeg") {
             array_push($errors, "L'extension du fichier audio " . $media['name'][$i] . " n'est pas valide");
             continue;
         }
@@ -95,8 +97,7 @@ for ($i = 0; $i < count($media['name']); $i++) {
           if (!move_uploaded_file($media['tmp_name'][$i], $directory . $validMedia[$i])) {
             $uploadSuccessful = false;
             break;
-        }
-      
+          }
           $stmt2->execute(); 
     }
       if ($uploadSuccessful) {
@@ -125,45 +126,56 @@ for ($i = 0; $i < count($media['name']); $i++) {
     
     }
   }
-       // Affichage des images avec leurs descriptions
-       function afficher_medias_posts($pdo) {
-        $stmt = $pdo->prepare('SELECT * FROM post ORDER BY idPost DESC');
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($results as $row) {
-            echo '<div style="display: flex; flex-direction: column; justify-content: space-between; width: 300px; border-style: solid; margin: 5px; padding: 5px; background-color: white;">';
-            $stmt2 = $pdo->prepare('SELECT nomFichierMedia FROM media WHERE idPost = :idPost');
-            $stmt2->bindParam(':idPost', $row['idPost'], PDO::PARAM_INT);
-            $stmt2->execute();
-            $medias = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($medias as $media) {
-                echo "<div style='display: flex; justify-content: center;'>";
-                $extension = strtolower(pathinfo($media['nomFichierMedia'], PATHINFO_EXTENSION));
-                if ($extension == 'mp4' || $extension == 'mpeg' || $extension == 'mov') {
-                    echo "<video src='uploads/".$media['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
-                } else if($extension != "mp3" && $extension != "wav")  {
-                    echo "<img src='uploads/".$media['nomFichierMedia']."' width='150' height='120' controls autoplay='false'>";
-                } else {
-                    echo "<img src='uploads/".$media['nomFichierMedia']."' width='150' height='120'>";
-                }
-                echo "</div>";
-            }
-            echo "<div style='display: flex; flex-direction: column;'>";
-            echo "<span>".$row['commentaire']."</span>";
-            echo "<div style='display: flex; justify-content: space-between; align-items: flex-end;'>";
-            echo "<form action='modifier_image.php' method='POST'>";
-            echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
-            echo "<input type='submit' name='modifier' value='Modifier'>";
-            echo "</form>";
-            echo "<form action='supprimer_image.php' method='POST'>";
-            echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
-            echo "<input type='submit' name='supprimer' value='Supprimer'>";
-            echo "</form>";
-            echo "</div>";
-            echo "</div>";
-            echo "</div><br><br>";
+  // Affichage des images avec leurs descriptions
+  function afficher_medias_posts($pdo) {
+    try {
+      $stmt = $pdo->prepare('SELECT * FROM post ORDER BY idPost DESC');
+      $stmt->execute();
+      $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      foreach ($results as $row) {
+        echo '<div style="display: flex; flex-direction: column; justify-content: space-between; width: 300px; border-style: solid; margin: 5px; padding: 5px; background-color: white;">';
+        $stmt2 = $pdo->prepare('SELECT nomFichierMedia FROM media WHERE idPost = :idPost');
+        $stmt2->bindParam(':idPost', $row['idPost'], PDO::PARAM_INT);
+        $stmt2->execute();
+        $medias = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($medias as $lemedia) {
+          $mime_type  = mime_content_type('uploads/' . $lemedia['nomFichierMedia']);
+          echo "<div style='display: flex; justify-content: center;'>";
+          if (strpos($mime_type, 'video/') === 0) {
+            echo "<video src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
+          } else if (strpos($mime_type, 'image/') === 0) {
+            echo "<img src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' >";
+          } else {
+            echo "<audio src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' controls>";
+          }
+          echo "</div>";
         }
+        if (isset($_SESSION['valid']) && $_SESSION['valid'] === true && !isset($_SESSION['insertion_reussie'])) {
+          // L'insertion a été effectuée avec succès !
+          echo '<script>alert("L\'insertion a été effectuée avec succès !");</script>';
+          $_SESSION['insertion_reussie'] = true;
+        }
+    
+        echo "<div style='display: flex; flex-direction: column;'>";
+        echo "<span>".$row['commentaire']."</span>";
+        echo "<div style='display: flex; justify-content: space-between; align-items: flex-end;'>";
+        echo "<form action='modifier_image.php' method='POST'>";
+        echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
+        echo "<input type='submit' name='modifier' value='Modifier'>";
+        echo "</form>";
+        echo "<form action='supprimer_image.php' method='POST'>";
+        echo "<input type='hidden' name='idPost' value='".$row['idPost']."'>";
+        echo "<input type='submit' name='supprimer' value='Supprimer'>";
+        echo "</form>";
+        echo "</div>";
+        echo "</div>";
+        echo "</div><br><br>";
+      }
+    } catch(PDOException $e) {
+      echo '<script>alert("L\'insertion a échoué.");</script>';
     }
+  }
+  
       
   
 ?>

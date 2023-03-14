@@ -248,12 +248,14 @@ require_once 'verification.php';
         });
         </script>
 		<?php
-		if (isset($_SESSION['valid']) && $_SESSION['valid'] === true) {
-            // L'insertion a été effectuée avec succès !
-            echo '<script>alert("L\'insertion a été effectuée avec succès !");</script>';
-        } else {
-            // L'insertion a échoué.
-            echo '<script>alert("L\'insertion a échoué.");</script>';
-        }
+		if (isset($_SESSION['supprime']) && $_SESSION['supprime'] === true) {
+			// La suppression a été effectuée avec succès !
+			echo '<script>alert("La suppression a été effectuée avec succès !");</script>';
+			unset($_SESSION['supprime']);
+		  } else if (isset($_SESSION['supprime']) && $_SESSION['supprime'] === false){
+			// La suppression a échoué.
+			echo '<script>alert("La suppression a échoué.");</script>';
+			unset($_SESSION['supprime']);
+		  }
 		?>
 </body></html>
