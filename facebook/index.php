@@ -2,7 +2,7 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
-require_once 'verification.php';
+require 'verification.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -210,7 +210,8 @@ require_once 'verification.php';
 
 					Update Status
 			  </div>
-			  <form action="verification.php" method="post" enctype="multipart/form-data">
+			  <form action="verification.php" method="post" enctype="multipart/form-data" data-ajax="true" data-url="verification.php" data-method="post">
+				
 			  <div class="modal-body">
 					<div class="form-group">
 					  <textarea class="form-control input-lg" name="text" autofocus="" placeholder="What do you want to share?"></textarea>
@@ -221,6 +222,32 @@ require_once 'verification.php';
 				 
     				  <input type="file" name="media[]" accept="image/*,video/*,audio/*" multiple>
     				  <input type="submit" value="Envoyer">
+					  <script>$(document).ready(function() {
+				  $("submit").on("click", function(event) {
+				    event.preventDefault();
+				
+				    var formData = new FormData($("#postForm")[0]);
+				
+				    $.ajax({
+				      url: "verification.php", 
+				      type: "POST",
+				      data: formData,
+				      contentType: false,
+				      processData: false,
+				      success: function(data) {
+				        // Traitement de la réponse JSON
+				        if (data.success) {
+				          alert("Post créé avec succès !");
+				        } else {
+				          alert("Erreur lors de la création du post : " + data.message);
+				        }
+				      },
+				      error: function(jqXHR, textStatus, errorThrown) {
+				        alert("Une erreur est survenue : " + textStatus);
+				      }
+				    });
+				  })};
+				  </script>
     				</form>
 					
 												 
@@ -257,5 +284,8 @@ require_once 'verification.php';
 			echo '<script>alert("La suppression a échoué.");</script>';
 			unset($_SESSION['supprime']);
 		  }
-		?>
+		  if (isset($_SESSION['valid']) && $_SESSION['valid'] == true) {
+			// L'insertion a été effectuée avec succès !
+			echo '<script>alert("L\'insertion a été effectuée avec succès !");</script>';
+		  } ?>
 </body></html>

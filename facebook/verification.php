@@ -15,8 +15,6 @@ $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
 $media = $_FILES['media'];
 $directory = "uploads/";
 $text = $_POST['text'];
-$_SESSION['valid'] = false;
-$_SESSION['insertion_reussie'] = false;
 if(!is_dir($directory)){
   mkdir($directory);
 }
@@ -74,55 +72,52 @@ for ($i = 0; $i < count($media['name']); $i++) {
     echo "</ul>";
   } else {
     $date = date('Y-m-d H:i:s');
-    $dateModif = date('Y-m-d H:i:s');
-    try {
-      // Début de la transaction
-      $pdo->beginTransaction();
-  
-      $stmt = $pdo->prepare('INSERT INTO post (commentaire, dateDeCreation, dateDeModification) VALUES (:commentaire, :dateModif, :date)');
-      $stmt->bindParam(':commentaire', $text);
-      $stmt->bindParam(':dateModif', $dateModif);
-      $stmt->bindParam(':date', $date);
-      $stmt->execute();
-      $idPost = $pdo->lastInsertId();
-      $uploadSuccessful = true;
-      for ($i = 0; $i < count($validMedia); $i++) {
-          $extension = strtolower(pathinfo($media['name'][$i], PATHINFO_EXTENSION));
-          $stmt2 = $pdo->prepare('INSERT INTO media (idPost, nomFichierMedia, typeMedia, dateDeCreation) VALUES (:idPost, :nom, :type, :date)');
-          $stmt2->bindParam(':idPost', $idPost);
-          $stmt2->bindParam(':nom', $validMedia[$i]);
-          $stmt2->bindParam(':type', $extension);
-          $stmt2->bindParam(':date', $date);
-          
-          if (!move_uploaded_file($media['tmp_name'][$i], $directory . $validMedia[$i])) {
-            $uploadSuccessful = false;
-            break;
-          }
-          $stmt2->execute(); 
-    }
-      if ($uploadSuccessful) {
-        // Si tout est OK, on valide la transaction
-        $pdo->commit();
-        $_SESSION['valid'] = true;
-        header("Location: index.php");
-        
+$dateModif = date('Y-m-d H:i:s');
 
-        exit;
-    } else {
-        // Si l'upload a échoué, on annule la transaction
-        $pdo->rollBack();
-        $_SESSION['valid'] = false;
-        exit();
+try {
+  // Début de la transaction
+  $pdo->beginTransaction();
+
+  $stmt = $pdo->prepare('INSERT INTO post (commentaire, dateDeCreation, dateDeModification) VALUES (:commentaire, :dateModif, :date)');
+  $stmt->bindParam(':commentaire', $text);
+  $stmt->bindParam(':dateModif', $dateModif);
+  $stmt->bindParam(':date', $date);
+  $stmt->execute();
+  $idPost = $pdo->lastInsertId();
+  $uploadSuccessful = true;
+  for ($i = 0; $i < count($validMedia); $i++) {
+    $extension = strtolower(pathinfo($media['name'][$i], PATHINFO_EXTENSION));
+    $stmt2 = $pdo->prepare('INSERT INTO media (idPost, nomFichierMedia, typeMedia, dateDeCreation) VALUES (:idPost, :nom, :type, :date)');
+    $stmt2->bindParam(':idPost', $idPost);
+    $stmt2->bindParam(':nom', $validMedia[$i]);
+    $stmt2->bindParam(':type', $extension);
+    $stmt2->bindParam(':date', $date);
+
+    if (!move_uploaded_file($media['tmp_name'][$i], $directory . $validMedia[$i])) {
+      $uploadSuccessful = false;
+      break;
     }
-  } catch (PDOException $e) {
-    // En cas d'erreur, on annule la transaction
+    $stmt2->execute(); 
+  }
+
+  if ($uploadSuccessful) {
+    // Si tout est OK, on valide la transaction
+    $pdo->commit();
+    $response = array('success' => true);
+    header('Location: index.php');
+  } else {
+    // Si l'upload a échoué, on annule la transaction
     $pdo->rollBack();
-    $_SESSION['valid'] = false;
-    echo 'Connexion échouée : ' . $e->getMessage();
-    exit();
+    $response = array('success' => false, 'message' => 'Erreur lors de l\'upload des médias');
+  }
+} catch (PDOException $e) {
+  // En cas d'erreur, on annule la transaction
+  $pdo->rollBack();
+  $response = array('success' => false, 'message' => 'Erreur lors de l\'insertion du post : ' . $e->getMessage());
 }
-      // Si tout est OK, on valide la transaction
-  
+
+header('Content-Type: application/json');
+echo json_encode($response);  
     
     }
   }
@@ -150,13 +145,10 @@ for ($i = 0; $i < count($media['name']); $i++) {
           }
           echo "</div>";
         }
-        if (isset($_SESSION['valid']) && $_SESSION['valid'] === true && !isset($_SESSION['insertion_reussie'])) {
-          // L'insertion a été effectuée avec succès !
-          echo '<script>alert("L\'insertion a été effectuée avec succès !");</script>';
-          $_SESSION['insertion_reussie'] = true;
-        }
+
     
         echo "<div style='display: flex; flex-direction: column;'>";
+       
         echo "<span>".$row['commentaire']."</span>";
         echo "<div style='display: flex; justify-content: space-between; align-items: flex-end;'>";
         echo "<form action='modifier_image.php' method='POST'>";

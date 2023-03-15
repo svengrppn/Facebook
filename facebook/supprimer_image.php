@@ -16,7 +16,7 @@
       $_SESSION['supprime'] = false;
       if (isset($_POST['supprimer'])) {
         // Récupérer l'identifiant du post à supprimer
-        $idPost = $_POST['idPost'];
+        $idPost = filter_input(INPUT_POST,'idPost',FILTER_SANITIZE_NUMBER_INT);
       
         // Début de la transaction
         $pdo->beginTransaction();
