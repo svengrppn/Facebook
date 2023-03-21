@@ -8,7 +8,7 @@ try {
   echo 'Connexion échouée : ' . $e->getMessage();
   exit();
 }
-
+$_SESSION['valid'] = false;
 $errors = array();
 $maxFileSize = 10 * 1024 * 1024; // 3 Méga-octets
 $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
@@ -87,13 +87,14 @@ try {
   $uploadSuccessful = true;
   for ($i = 0; $i < count($validMedia); $i++) {
     $extension = strtolower(pathinfo($media['name'][$i], PATHINFO_EXTENSION));
+    $filename =  md5(uniqid('', true)) . '.' . $extension;
     $stmt2 = $pdo->prepare('INSERT INTO media (idPost, nomFichierMedia, typeMedia, dateDeCreation) VALUES (:idPost, :nom, :type, :date)');
     $stmt2->bindParam(':idPost', $idPost);
-    $stmt2->bindParam(':nom', $validMedia[$i]);
-    $stmt2->bindParam(':type', $extension);
+    $stmt2->bindParam(':nom', $filename);
+    $stmt2->bindParam(':type',  $extension);
     $stmt2->bindParam(':date', $date);
 
-    if (!move_uploaded_file($media['tmp_name'][$i], $directory . $validMedia[$i])) {
+    if (!move_uploaded_file($media['tmp_name'][$i], $directory .  $filename)) {
       $uploadSuccessful = false;
       break;
     }
@@ -134,17 +135,18 @@ echo json_encode($response);
         $stmt2->execute();
         $medias = $stmt2->fetchAll(PDO::FETCH_ASSOC);
         foreach ($medias as $lemedia) {
-          $mime_type  = mime_content_type('uploads/' . $lemedia['nomFichierMedia']);
+          $mime_type = mime_content_type('uploads/' . $lemedia['nomFichierMedia']);
           echo "<div style='display: flex; justify-content: center;'>";
           if (strpos($mime_type, 'video/') === 0) {
-            echo "<video src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
+          echo "<video src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' autoplay loop></video>";
           } else if (strpos($mime_type, 'image/') === 0) {
-            echo "<img src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' >";
+          echo "<img src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' >";
           } else {
-            echo "<audio src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' controls>";
+          echo "<audio src='uploads/".$lemedia['nomFichierMedia']."' width='150' height='120' controls>";
           }
           echo "</div>";
-        }
+          }
+        $_SESSION['valid'] = true;
 
     
         echo "<div style='display: flex; flex-direction: column;'>";
@@ -162,6 +164,8 @@ echo json_encode($response);
         echo "</div>";
         echo "</div>";
         echo "</div><br><br>";
+        
+    
       }
     } catch(PDOException $e) {
       echo '<script>alert("L\'insertion a échoué.");</script>';

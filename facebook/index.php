@@ -153,7 +153,7 @@ require 'verification.php';
 								   
 									
 								  
-										
+
 								   
 								  </div>
 								  
@@ -222,7 +222,46 @@ require 'verification.php';
 				 
     				  <input type="file" name="media[]" accept="image/*,video/*,audio/*" multiple>
     				  <input type="submit" value="Envoyer">
-					  <script>$(document).ready(function() {
+
+    				</form>
+					
+												 
+				</div>	
+			  </div>
+			 
+		  </div>
+		  </div>
+		  <div> salut</div>
+		  
+		</div>
+       
+        <script type="text/javascript" src="assets/js/jquery.js"></script>
+        <script type="text/javascript" src="assets/js/bootstrap.js"></script>
+        <script type="text/javascript"></script>
+		<script>
+        $(document).ready(function() {
+			$('[data-toggle=offcanvas]').click(function() {
+				$(this).toggleClass('visible-xs text-center');
+				$(this).find('i').toggleClass('glyphicon-chevron-right glyphicon-chevron-left');
+				$('.row-offcanvas').toggleClass('active');
+				$('#lg-menu').toggleClass('hidden-xs').toggleClass('visible-xs');
+				$('#xs-menu').toggleClass('visible-xs').toggleClass('hidden-xs');
+				$('#btnShow').toggle();
+			});
+        }); 
+        </script>
+		<?php
+		if (isset($_SESSION['supprime']) && $_SESSION['supprime'] === true) {
+   			?> 
+			<script>alert("Le post a été supprimé avec succès.")</script>
+			<?php
+   			 unset($_SESSION['supprime']);
+		}	
+		?>
+</body></html>
+
+<script>
+$(document).ready(function() {
 				  $("submit").on("click", function(event) {
 				    event.preventDefault();
 				
@@ -247,45 +286,4 @@ require 'verification.php';
 				      }
 				    });
 				  })};
-				  </script>
-    				</form>
-					
-												 
-				</div>	
-			  </div>
-			
-		  </div>
-		  </div>
-		  <div> salut</div>
-		  
-		</div>
-       
-        <script type="text/javascript" src="assets/js/jquery.js"></script>
-        <script type="text/javascript" src="assets/js/bootstrap.js"></script>
-        <script type="text/javascript">
-        $(document).ready(function() {
-			$('[data-toggle=offcanvas]').click(function() {
-				$(this).toggleClass('visible-xs text-center');
-				$(this).find('i').toggleClass('glyphicon-chevron-right glyphicon-chevron-left');
-				$('.row-offcanvas').toggleClass('active');
-				$('#lg-menu').toggleClass('hidden-xs').toggleClass('visible-xs');
-				$('#xs-menu').toggleClass('visible-xs').toggleClass('hidden-xs');
-				$('#btnShow').toggle();
-			});
-        });
-        </script>
-		<?php
-		if (isset($_SESSION['supprime']) && $_SESSION['supprime'] === true) {
-			// La suppression a été effectuée avec succès !
-			echo '<script>alert("La suppression a été effectuée avec succès !");</script>';
-			unset($_SESSION['supprime']);
-		  } else if (isset($_SESSION['supprime']) && $_SESSION['supprime'] === false){
-			// La suppression a échoué.
-			echo '<script>alert("La suppression a échoué.");</script>';
-			unset($_SESSION['supprime']);
-		  }
-		  if (isset($_SESSION['valid']) && $_SESSION['valid'] == true) {
-			// L'insertion a été effectuée avec succès !
-			echo '<script>alert("L\'insertion a été effectuée avec succès !");</script>';
-		  } ?>
-</body></html>
+</script>
