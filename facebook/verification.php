@@ -14,9 +14,13 @@ $maxFileSize = 10 * 1024 * 1024; // 3 Méga-octets
 $maxTotalSize = 70 * 1024 * 1024; // 70 Méga-octets
 $media = $_FILES['media'];
 $directory = "uploads/";
-$text = $_POST['text'];
+$directory_minia = "img_miniatures/";
+$text = filter_input(INPUT_POST,'text',FILTER_SANITIZE_SPECIAL_CHARS);
 if(!is_dir($directory)){
   mkdir($directory);
+}
+if(!is_dir($directory_minia)){
+  mkdir($directory_minia);
 }
 if (isset($media)) {
   $totalSize = 0;
@@ -94,12 +98,46 @@ try {
     $stmt2->bindParam(':type',  $extension);
     $stmt2->bindParam(':date', $date);
 
+
+    
     if (!move_uploaded_file($media['tmp_name'][$i], $directory .  $filename)) {
       $uploadSuccessful = false;
       break;
     }
     $stmt2->execute(); 
   }
+  // Chemin du fichier original
+  $filePath = $directory . $filename;
+
+  // Création de la miniature
+  list($width, $height) = getimagesize($filePath);
+  $thumbnailWidth = 100; // Largeur de la miniature
+  $thumbnailHeight = ($height / $width) * $thumbnailWidth;
+  $thumbnail = imagecreatetruecolor($thumbnailWidth, $thumbnailHeight);
+  $source = null;
+  switch ($extension) {
+      case 'jpeg':
+      case 'jpg':
+          $source = imagecreatefromjpeg($filePath);
+          break;
+      case 'png':
+          $source = imagecreatefrompng($filePath);
+          break;
+  }
+  imagecopyresampled($thumbnail, $source, 0, 0, 0, 0, $thumbnailWidth, $thumbnailHeight, $width, $height);
+
+  // Enregistrement de la miniature
+  $thumbnailPath = $directory_minia . $filename;
+  switch ($extension) {
+      case 'jpeg':
+      case 'jpg':
+          imagejpeg($thumbnail, $thumbnailPath);
+          break;
+      case 'png':
+          imagepng($thumbnail, $thumbnailPath);
+          break;
+  }
+  
 
   if ($uploadSuccessful) {
     // Si tout est OK, on valide la transaction
@@ -117,9 +155,9 @@ try {
   $response = array('success' => false, 'message' => 'Erreur lors de l\'insertion du post : ' . $e->getMessage());
 }
 
+// Envoi de la réponse
 header('Content-Type: application/json');
-echo json_encode($response);  
-    
+echo json_encode(array('success' => true));
     }
   }
   // Affichage des images avec leurs descriptions
@@ -146,7 +184,6 @@ echo json_encode($response);
           }
           echo "</div>";
           }
-        $_SESSION['valid'] = true;
 
     
         echo "<div style='display: flex; flex-direction: column;'>";
@@ -167,6 +204,7 @@ echo json_encode($response);
         
     
       }
+      $_SESSION['valid'] = true;
     } catch(PDOException $e) {
       echo '<script>alert("L\'insertion a échoué.");</script>';
     }

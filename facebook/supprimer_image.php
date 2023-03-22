@@ -31,9 +31,13 @@
           // Supprimer les fichiers médias du dossier "uploads"
           foreach ($medias as $media) {
               $chemin = 'uploads/' . $media['nomFichierMedia'];
+              $chemin2 = 'img_miniatures/' . $media['nomFichierMedia'];
               if (file_exists($chemin)) {
                   unlink($chemin);
               }
+              if (file_exists($chemin2)) {
+                unlink($chemin2);
+            }
           }
       
           // Supprimer les enregistrements des médias dans la base de données

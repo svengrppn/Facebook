@@ -210,7 +210,7 @@ require 'verification.php';
 
 					Update Status
 			  </div>
-			  <form action="verification.php" method="post" enctype="multipart/form-data" data-ajax="true" data-url="verification.php" data-method="post">
+			  <form action="verification.php" id="myForm" method="post" enctype="multipart/form-data" data-ajax="true" data-url="verification.php" data-method="post">
 				
 			  <div class="modal-body">
 					<div class="form-group">
@@ -255,35 +255,43 @@ require 'verification.php';
    			?> 
 			<script>alert("Le post a été supprimé avec succès.")</script>
 			<?php
+			$_SESSION['valid'] = false;
    			 unset($_SESSION['supprime']);
-		}	
+		}
+		if (isset($_SESSION['valid']) && $_SESSION['valid'] === true) {
+			?> 
+		 <script>alert("Le post bien été inséré.")</script>
+		 <?php
+			 unset($_SESSION['valid']);
+	 }	
 		?>
+		<script>
+		document.getElementById('myForm').addEventListener('submit', function(event)) {
+		 event.preventDefault(); // Empêche l'envoi du formulaire
+				
+		 // Récupère les données du formulaire
+		const formData = new FormData(this);
+				
+		 // Envoie les données à la base de données en utilisant Fetch
+		 fetch('verification.php', {
+		   method: 'POST',
+		   body: formData
+		 })
+		 .then(response => {
+		   if (!response.ok) {
+		     throw new Error('Erreur lors de l\'envoi des données');
+		   }
+
+		   return response.json();
+		 })
+		 .then(data => {
+		   console.log(data);
+		 })
+		 .catch(error => {
+		   console.error(error);
+		 });
+		};
+
+		</script>
 </body></html>
 
-<script>
-$(document).ready(function() {
-				  $("submit").on("click", function(event) {
-				    event.preventDefault();
-				
-				    var formData = new FormData($("#postForm")[0]);
-				
-				    $.ajax({
-				      url: "verification.php", 
-				      type: "POST",
-				      data: formData,
-				      contentType: false,
-				      processData: false,
-				      success: function(data) {
-				        // Traitement de la réponse JSON
-				        if (data.success) {
-				          alert("Post créé avec succès !");
-				        } else {
-				          alert("Erreur lors de la création du post : " + data.message);
-				        }
-				      },
-				      error: function(jqXHR, textStatus, errorThrown) {
-				        alert("Une erreur est survenue : " + textStatus);
-				      }
-				    });
-				  })};
-</script>
